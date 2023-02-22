@@ -1,0 +1,3 @@
+#!/bin/sh
+
+find ./lib -type f -iname '*.pm' -exec sh -c 'cat "{}" | perltidy --standard-error-output --profile=./.perltidyrc -o "{}"' \;

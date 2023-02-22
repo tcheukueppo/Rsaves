@@ -1,0 +1,27 @@
+--blank-lines-before-packages=0
+--blanks-before-blocks
+--blanks-before-subs
+--paren-tightness=1
+--closing-token-indentation=0
+#--closing-token-indentation=1
+--continuation-indentation=4
+--brace-vertical-tightness=1
+--brace-tightness=1
+--iterations=2
+--extended-syntax
+#--extended-continuation-indentation
+#--line-up-parentheses
+#--extended-line-up-parentheses
+--indent-columns=4
+--maximum-line-length=127
+--opening-brace-always-on-right
+--break-at-old-comma-breakpoints
+--character-encoding=utf8
+--nooutdent-long-quotes
+--nooutdent-long-lines
+--valign-block-comments
+--valign-code
+--valign-side-comments
+--square-bracket-tightness=1
+--logical-padding
+--want-break-before="% + - * / x != == >= <= =~ !~ < > | & >= < = **= += *= &= <<= &&= -= /= |= >>= ||= .= %= ^= x= and or xor"
