@@ -14,11 +14,11 @@ with 'Rsaves::Version';
 my %FIELD_SPEC = (
     name         => [ 0, [ 0x0000, 8, '(C)8' ] ],
     gender       => [ 0, [ 0x0008, 1, 'C' ] ],
-    time_played  => [ 0, [ 0x000E, 5, '' ] ],
-    rival_name   => [ 1, [ 0x0008, 1, 'c' ] ],
-    trainer_id   => [ 0, [ 0x000A, 4, '' ] ],
-    coins        => [ 0, { firered_leafgreen => [], emerald => [], ruby_sapphire => [] } ],
-    money        => [ 0, { firered_leafgreen => [], emerald => [], ruby_sapphire => [] } ],
+    time_played  => [ 0, [ 0x000E, 5, '(S)(C)(C)' ] ],
+    rival_name   => [ 1, [ 0x0008, 1, 'C' ] ],
+    trainer_id   => [ 0, [ 0x000A, 4, 'V' ] ],
+    money        => [ 1, { firered_leafgreen => [ 0x0290, 4, 'V' ], emerald => [ 0x0490, 4, 'V' ], ruby_sapphire => [ 0x0490, 4, 'V' ] } ],
+    coins        => [ 1, { firered_leafgreen => [ 0x0294, 4, 'V' ], emerald => [ 0x0494, 4, 'V' ], ruby_sapphire => [ 0x0494, 4, 'V' ] } ],
     security_key => [ 0, { firered_leafgreen => [ 0x0F20, 4, 'V' ], emerald => [ 0x01F4, 4, 'V' ] } ],
 );
 

@@ -18,8 +18,8 @@ my @CHECKSUM_BYTES = ( hex 'F80', (3968) x 12, 2000 );
 my @SECTION_SPEC   = (
     [ sub { $CHECKSUM_BYTES[ shift() ] } ],
     [ sub { 4084 - $CHECKSUM_BYTES[ shift() ] } ],
-    [ 2, 'v' ] x 2,
-    [ 4, 'V' ] x 2,
+    ( [ 2, 'v' ] ) x 2,
+    ( [ 4, 'V' ] ) x 2,
 );
 
 sub hihalf_u32 {
