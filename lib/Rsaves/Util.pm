@@ -98,7 +98,7 @@ sub access_field {
 
     #say $test Dumper [$data];
     open my $fh, '<', \$data;
-    read $fh, my($read), $offset;
+    read $fh, my ($read), $offset;
     my $new_data = $read;
     read $fh, $read, $len;
 
@@ -107,6 +107,7 @@ sub access_field {
     return unpack $rest[0], $read if @rest == 1;
 
     croak "template needed to pack data" unless @rest == 2;
+
     #say $test "see now: ", Dumper [ map { length } @{$rest[1]} ];
     $new_data .= pack $rest[0], ref $rest[1] eq 'ARRAY' ? @{ $rest[1] } : $rest[1];
     $new_data .= <$fh>;
