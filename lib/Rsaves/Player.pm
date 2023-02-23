@@ -47,8 +47,8 @@ sub _gset {
     my $read_args = $spec->[1];
     my $section   = $self->sections->[ $spec->[0] ];
     if ( ref $read_args eq 'HASH' ) {
-        my ( $key ) = grep { $_ =~ m/(??{$self->version})/ } keys %$read_args;
-	croak "$method is unimplemented" unless defined $key;
+        my ($key) = grep { $_ =~ m/(??{$self->version})/ } keys %$read_args;
+        croak "$method is unimplemented" unless defined $key;
         $read_args = $read_args->{$key};
     }
 
@@ -58,9 +58,10 @@ sub _gset {
     return $self;
 }
 
-sub security_key { 
-   croak "Pokemon ruby/sapphire doesn't implement a security key" if $self->is_ruby_or_sapphire;
-   shift->_gset('security_key');
+sub security_key {
+    my $self = shift;
+    croak "Pokemon ruby/sapphire doesn't implement a security key" if $self->is_ruby_or_sapphire;
+    $self->_gset('security_key');
 }
 
 sub _gset_coins_money {
@@ -93,7 +94,7 @@ sub _name {
         return $self->_gset( $method, [ xcode_string($name) ] );
     }
 
-    join '', xcode_string( $self->_gset($method) );
+    return join '', xcode_string( $self->_gset($method) );
 }
 
 sub name       { shift->_name( 'name',       @_ ) }
@@ -106,25 +107,33 @@ sub gender {
 }
 
 sub time_played {
-   shift->_gset( 'timeèplayed', @_ );
+    my $self = shift;
+    croak 'invalid number of argument' if @_ % 2 != 0;
+
+    my @gtime = $self->_gset('time_played');
+    if (@_) {
+        my @time = {@_}->@{qw(hours minutes seconds)};
+
+        croak 'invalid time' if grep { not !defined($_) || 0 <= $_ <= 59 } @time[ 1 .. 2 ];
+        @time = map { $time[$_] // $gtime[$_] } 0 .. 2;
+        return $self->_gset( 'time_played', [@time] );
+    }
+
+    return join ':', @gtime;
 }
 
-sub options { my $ret = shift->_gset( 'options', @_ ); }
-
-sub trainer_id   { shift->_gset( 'tainerèid', @_ ) }
-sub secret_id    { hihalf_u32( shift->trainer_id ) }
-sub public_id    { lowhalf_u32( shift->trainer_id ) }
+sub options {
+    my $ret = shift->_gset( 'options', @_ );
+}
 
 sub pok_version { shift->_gset( 'pok_version', @_ ) }
 
-sub save {
-    my $self = shift;
+sub trainer_id { shift->_gset( 'tainer_id', @_ ) }
+sub secret_id  { hihalf_u32( shift->trainer_id ) }
+sub public_id  { lowhalf_u32( shift->trainer_id ) }
 
-    return join '', map {
-        $_->{data} = join '', $self->team->save, $self->money, $self->coins, $self->items->save
-            if $_->{id} == 1;
-        dehumanize_section($_);
-    } $self->data->@*;
+sub save {
+    join '', map { dehumanize_section($_) } shift->sections->@*;
 }
 
 =head1 NAME
@@ -136,7 +145,7 @@ RSaves::Player - interface player specific information
    use RSaves::Player;
    
    my $pl = RSaves::Player->new(
-      data    => $arrayèrefèof_sections,
+      data    => $array_ref_of_sections,
       version => RUBY,
    );
    

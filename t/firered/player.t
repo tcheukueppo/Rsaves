@@ -21,6 +21,15 @@ is($rs->player->gender, 1);
 
 # Set number of coins to its max value
 is($rs->player->money, 400);
+isa_ok($rs->player->money(9999), 'Rsaves::Player');
+is($rs->player->money, 9999);
 is($rs->player->coins, 0);
+
+# Augment time
+is($rs->player->time_played, '1:14:23');
+isa_ok($rs->player->time_played(hours => 4, seconds => 90), 'Rsaves::Player');
+is($rs->player->time_played, '4:14:25');
+
+
 
 done_testing();
