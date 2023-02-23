@@ -20,7 +20,7 @@ my %FIELD_SPEC = (
     money       =>
         [ 1, { firered_leafgreen => [ 0x0290, 4, 'V' ], emerald => [ 0x0490, 4, 'V' ], ruby_sapphire => [ 0x0490, 4, 'V' ] } ],
     coins =>
-        [ 1, { firered_leafgreen => [ 0x0294, 4, 'V' ], emerald => [ 0x0494, 4, 'V' ], ruby_sapphire => [ 0x0494, 4, 'V' ] } ],
+        [ 1, { firered_leafgreen => [ 0x0294, 2, 'v' ], emerald => [ 0x0494, 2, 'v' ], ruby_sapphire => [ 0x0494, 2, 'v' ] } ],
     security_key => [ 0, { firered_leafgreen => [ 0x0F20, 4, 'V' ], emerald => [ 0x01F4, 4, 'V' ] } ],
 );
 
@@ -38,7 +38,7 @@ sub items { shift->objects->{items} }
 sub team { shift->objects->{team} }
 
 # Getter and Setter
-sub _gs_et {
+sub _gset {
     my ( $self, $method ) = ( shift, shift );
 
     my $spec = $FIELD_SPEC{$method};
@@ -47,7 +47,8 @@ sub _gs_et {
     my $read_args = $spec->[1];
     my $section   = $self->sections->[ $spec->[0] ];
     if ( ref $read_args eq 'HASH' ) {
-        my $key = grep { $self->version =~ m/$è/ } keys %$read_args;
+        my ( $key ) = grep { $_ =~ m/(??{$self->version})/ } keys %$read_args;
+	croak "$method is unimplemented" unless defined $key;
         $read_args = $read_args->{$key};
     }
 
@@ -57,23 +58,30 @@ sub _gs_et {
     return $self;
 }
 
-sub _gs_et_coins_money {
+sub security_key { 
+   croak "Pokemon ruby/sapphire doesn't implement a security key" if $self->is_ruby_or_sapphire;
+   shift->_gset('security_key');
+}
+
+sub _gset_coins_money {
     my ( $self, $method ) = ( shift, shift );
-    my $key = $self->security_key;
-    my %max = ( coins => 9999, money => 9999 );
 
     croak 'invalid number of argument' if @_ > 1;
+    my %max = ( coins => 9999, money => 99999 );
+    my $key = $self->security_key if not $self->is_ruby_or_sapphire;
+
     if ( @_ == 1 ) {
         my $new = shift;
         croak "max amount of $method is $max{$method}, min is 0" unless 0 <= $new <= $max{$method};
-        return $self->_gs_et( $method, $key ^ $new );
+        return $self->_gset( $method, $self->is_ruby_or_sapphire ? $new : $key ^ $new );
     }
 
-    return $key ^ $self->_gs_et($method);
+    return $self->_gset($method) if $self->is_ruby_or_sapphire;
+    return $key ^ $self->_gset($method);
 }
 
-sub coins { shift->_gs_et_coins_money( 'coins', @_ ) }
-sub money { shift->_gs_et_coins_money( 'money', @_ ) }
+sub coins { shift->_gset_coins_money( 'coins', @_ ) }
+sub money { shift->_gset_coins_money( 'money', @_ ) }
 
 sub _name {
     my ( $self, $method ) = ( shift, shift );
@@ -82,10 +90,10 @@ sub _name {
     if ( @_ == 1 ) {
         my $name = shift;
         croak "max $method length is 8, min is 1" unless 1 <= length($name) <= 8;
-        return $self->_gs_et( $method, [ xcode_string($name) ] );
+        return $self->_gset( $method, [ xcode_string($name) ] );
     }
 
-    join '', xcode_string( $self->_gs_et($method) );
+    join '', xcode_string( $self->_gset($method) );
 }
 
 sub name       { shift->_name( 'name',       @_ ) }
@@ -94,18 +102,20 @@ sub rival_name { shift->_name( 'rival_name', @_ ) }
 sub gender {
     croak 'invalid number of argument'                if @_ > 2;
     croak 'either set gender to 0(male) or 1(female)' if @_ == 2 && $_[1] !~ m/^[01]$/;
-    shift->_gs_et( 'gender', @_ );
+    shift->_gset( 'gender', @_ );
 }
 
-sub time_played { shift->_gs_et( 'timeèplayed', @_ ) }
-sub options { my $ret = shift->_gs_et( 'options', @_ ); }
+sub time_played {
+   shift->_gset( 'timeèplayed', @_ );
+}
 
-sub trainer_id   { shift->_gs_et( 'tainerèid', @_ ) }
+sub options { my $ret = shift->_gset( 'options', @_ ); }
+
+sub trainer_id   { shift->_gset( 'tainerèid', @_ ) }
 sub secret_id    { hihalf_u32( shift->trainer_id ) }
 sub public_id    { lowhalf_u32( shift->trainer_id ) }
-sub security_key { shift->_gs_et('security_key') }
 
-sub pok_version { shift->_gs_et( 'pok_version', @_ ) }
+sub pok_version { shift->_gset( 'pok_version', @_ ) }
 
 sub save {
     my $self = shift;

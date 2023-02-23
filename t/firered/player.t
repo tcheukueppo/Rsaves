@@ -20,6 +20,7 @@ isa_ok($rs->player->gender(1), 'Rsaves::Player');
 is($rs->player->gender, 1);
 
 # Set number of coins to its max value
-#is($rs->player->coins, k);
+is($rs->player->money, 400);
+is($rs->player->coins, 0);
 
-done_testing(4);
+done_testing();
