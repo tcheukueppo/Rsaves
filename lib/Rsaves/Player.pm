@@ -12,15 +12,14 @@ open my $test, ">", "/tmp/none";
 with 'Rsaves::Version';
 
 my %FIELD_SPEC = (
-    name        => [ 0, [ 0x0000, 8, '(C)8' ] ],
-    gender      => [ 0, [ 0x0008, 1, 'C' ] ],
-    time_played => [ 0, [ 0x000E, 5, '(S)(C)(C)' ] ],
-    rival_name  => [ 1, [ 0x0008, 1, 'C' ] ],
-    trainer_id  => [ 0, [ 0x000A, 4, 'V' ] ],
-    money       =>
-        [ 1, { firered_leafgreen => [ 0x0290, 4, 'V' ], emerald => [ 0x0490, 4, 'V' ], ruby_sapphire => [ 0x0490, 4, 'V' ] } ],
-    coins =>
-        [ 1, { firered_leafgreen => [ 0x0294, 2, 'v' ], emerald => [ 0x0494, 2, 'v' ], ruby_sapphire => [ 0x0494, 2, 'v' ] } ],
+    name         => [ 0, [ 0x0000, 8, '(C)8' ] ],
+    gender       => [ 0, [ 0x0008, 1, 'C' ] ],
+    time_played  => [ 0, [ 0x000E, 5, '(S)(C)2' ] ],
+    trainer_id   => [ 0, [ 0x000A, 4, 'V' ] ],
+    options      => [ 0, [ 0x0013, 3, '(C)(C)(C)'] ],
+    rival_name   => [ 1, [ 0x0008, 1, 'C' ] ],
+    money        => [ 1, { firered_leafgreen => [ 0x0290, 4, 'V' ], emerald => [ 0x0490, 4, 'V' ], ruby_sapphire => [ 0x0490, 4, 'V' ] } ],
+    coins        => [ 1, { firered_leafgreen => [ 0x0294, 2, 'v' ], emerald => [ 0x0494, 2, 'v' ], ruby_sapphire => [ 0x0494, 2, 'v' ] } ],
     security_key => [ 0, { firered_leafgreen => [ 0x0F20, 4, 'V' ], emerald => [ 0x01F4, 4, 'V' ] } ],
 );
 
@@ -42,13 +41,13 @@ sub _gset {
     my ( $self, $method ) = ( shift, shift );
 
     my $spec = $FIELD_SPEC{$method};
-    croak "$method is unimplemented" unless defined $spec;
+    croak "method '$method' is unimplemented" unless defined $spec;
 
     my $read_args = $spec->[1];
     my $section   = $self->sections->[ $spec->[0] ];
     if ( ref $read_args eq 'HASH' ) {
         my ($key) = grep { $_ =~ m/(??{$self->version})/ } keys %$read_args;
-        croak "$method is unimplemented" unless defined $key;
+        croak "method '$method' is unimplemented" unless defined $key;
         $read_args = $read_args->{$key};
     }
 
@@ -110,20 +109,60 @@ sub time_played {
     my $self = shift;
     croak 'invalid number of argument' if @_ % 2 != 0;
 
-    my @gtime = $self->_gset('time_played');
+    my @game_time = $self->_gset('time_played');
     if (@_) {
         my @time = {@_}->@{qw(hours minutes seconds)};
 
         croak 'invalid time' if grep { not !defined($_) || 0 <= $_ <= 59 } @time[ 1 .. 2 ];
-        @time = map { $time[$_] // $gtime[$_] } 0 .. 2;
+        @time = map { $time[$_] // $game_time[$_] } 0 .. 2;
         return $self->_gset( 'time_played', [@time] );
     }
 
-    return join ':', @gtime;
+    return join ':', @game_time;
 }
 
 sub options {
-    my $ret = shift->_gset( 'options', @_ );
+    my $self = shift;
+    croak 'invalid number of argument' if @_ % 2 != 0;
+
+    my @save_ops     = $self->_gset('options');
+    my @option_names = qw(button_mode txt_speed frame sound bat_style bat_scene);
+    my %map          = (
+        button_mode => { ( $self->is_leafgreen_or_firered ? 'help' : 'normal' ) => 0, lr     => 1, l_equals_a => 2 },
+        txt_speed   => { slow                                                   => 0, medium => 1, fast       => 2 },
+        sound       => { mono                                                   => 0, stereo => 1 },
+        bat_style   => { shift                                                  => 0, set    => 2 },
+        bat_scene   => { on                                                     => 0, off    => 4 },
+	frame       => { map { 'frame_' . $_ => $_ } 0 .. 20 },
+    );
+    my %subs = (
+        frame     => sub { ( $_[0] & 0b11111000 ) >> 3 },
+        speed     => sub { $_[0] & 0b11 },
+        sound     => sub { 1 & $_[0] >> 0 },
+        bat_style => sub { ( 1 & $_[0] >> 1 ) == 1 ? 2 : 0 },
+        bat_scene => sub { ( 1 & $_[0] >> 2 ) == 1 ? 4 : 0 },
+    );
+
+    if ( @_ == 0 ) {
+        say $test "options: ";
+	say $test Dumper [ @save_ops ];
+        @save_ops = ( $save_ops[0], ( $save_ops[1] ) x 2, ( $save_ops[2] ) x 3 );
+        return map {
+            my $option = $option_names[$_];
+            $option => { reverse $map{$option}->%* }->{ $subs{$option}->( $save_ops[$_] ) }
+        } ( 0 .. $#save_ops );
+    }
+
+    my %ops = @_;
+    croak "invalid pairs $_ => $ops{$_}" foreach grep { not exists $map{$_} || exists $map{$_}{ $ops{$_} } } keys %ops;
+
+    my ( $mode, $speed_frame, $sound_bat );
+    $mode = defined $ops{button_mode} ? $map{button_mode}{ $ops{button_mode} } : $save_ops[0];
+    $speed_frame += defined $ops{txt_speed} ? $map{txt_speed}{ $ops{txt_speed} } : $save_ops[1] & 0b11;
+    $speed_frame += defined $ops{frame}     ? $map{frame}{ $ops{frame} } << 3    : $save_ops[1] & 0b11111000;
+    $sound_bat ^= defined $ops{$_} ? $map{$_}{ $ops{$_} } : $subs{$_}->( $save_ops[2] ) foreach @option_names[ 3 .. 5 ];
+
+    return $self->_gset( 'options', [ $mode, $speed_frame, $sound_bat ] );
 }
 
 sub pok_version { shift->_gset( 'pok_version', @_ ) }

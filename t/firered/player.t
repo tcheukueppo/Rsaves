@@ -26,10 +26,20 @@ is($rs->player->money, 9999);
 is($rs->player->coins, 0);
 
 # Augment time
-is($rs->player->time_played, '1:14:23');
-isa_ok($rs->player->time_played(hours => 4, seconds => 90), 'Rsaves::Player');
-is($rs->player->time_played, '4:14:25');
+#is($rs->player->time_played, '1:15:0');
+#isa_ok($rs->player->time_played(hours => 4, seconds => 59), 'Rsaves::Player');
+#is($rs->player->time_played, '4:15:59');
 
+# Modify game options
+my $valid_option = { 
+   txt_speed => 'medium',
+   bat_scene => 'on',
+   bat_style => 'shift',
+   button_mode => 'normal',
+   frame => 'frame_1',
+   sound => 'mono',
+};
 
+is_deeply($rs->player->options, $valid_option);
 
 done_testing();

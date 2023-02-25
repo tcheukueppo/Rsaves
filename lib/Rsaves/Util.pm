@@ -7,7 +7,8 @@ use Carp q(croak);
 
 use parent 'Exporter';
 
-our @EXPORT_OK = qw(humanize_section dehumanize_section hihalf_u32 lowhalf_u32 valid_section_data access_field xcode_string);
+our @EXPORT_OK
+    = qw(humanize_section dehumanize_section hihalf_u32 lowhalf_u32 valid_section_data access_field xcode_string bit_at high low);
 
 use Data::Dumper;
 use feature qw(say);

@@ -13,7 +13,7 @@
 #--line-up-parentheses
 #--extended-line-up-parentheses
 --indent-columns=4
---maximum-line-length=127
+--maximum-line-length=140
 --opening-brace-always-on-right
 --break-at-old-comma-breakpoints
 --character-encoding=utf8
